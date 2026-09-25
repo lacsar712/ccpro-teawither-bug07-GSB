@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 
 from .models import Garden, Trough, WitherBatch
 
@@ -60,19 +61,15 @@ class WitherBatchForm(forms.ModelForm):
             "%Y-%m-%d %H:%M",
         ]
         if self.instance and self.instance.pk and self.instance.startedAt:
-            from django.utils import timezone
-
+            # 读出：库中 UTC 时刻 → 东八区墙钟，回填 datetime-local 输入框
             local = timezone.localtime(self.instance.startedAt)
             self.initial["startedAt"] = local.strftime("%Y-%m-%dT%H:%M")
 
     def clean_startedAt(self):
-        import datetime as dt
-        from django.utils import timezone
-
         val = self.cleaned_data.get("startedAt")
         if val is None:
             return val
-        # BUG: 把本地输入当成 UTC 存，再编辑又 localtime → 偏几小时
+        # 写入：datetime-local 输入的是东八区墙钟，按当前时区解释后再存库
         if timezone.is_naive(val):
-            val = timezone.make_aware(val, dt.timezone.utc)
+            val = timezone.make_aware(val, timezone.get_current_timezone())
         return val

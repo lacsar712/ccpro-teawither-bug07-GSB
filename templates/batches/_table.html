@@ -3,7 +3,7 @@
   <thead>
     <tr>
       <th>茶园/槽位</th>
-      <th>开始时间</th>
+      <th>开始时间(东八区)</th>
       <th>目标含水率</th>
       <th>实测含水率</th>
       <th>揉捻等级</th>
@@ -14,8 +14,7 @@
     {% for b in batches %}
     <tr>
       <td>{{ b.trough.garden.name }} / {{ b.trough.troughCode }}</td>
-      <!-- BUG: 强制按 UTC 显示 -->
-      <td>{{ b.startedAt|date:"Y-m-d H:i"|default:b.startedAt }} UTC</td>
+      <td>{{ b.startedAt|date:"Y-m-d H:i" }}</td>
       <td>{{ b.targetMoisture }}%</td>
       <td>{% if b.actualMoisture != None %}{{ b.actualMoisture }}%{% else %}—{% endif %}</td>
       <td>{{ b.rollGrade }}</td>

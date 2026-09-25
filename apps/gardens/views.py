@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.utils import timezone
-import datetime as _dt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
@@ -35,13 +34,14 @@ def home(request):
         "loading_count": Trough.objects.filter(
             status=Trough.STATUS_LOADING
         ).count(),
-        # BUG: 最近批次用 utcnow 窗口，与列表东八展示不一致
-        "latest_batch_at": (
-            WitherBatch.objects.order_by("-startedAt").first().startedAt
-            if WitherBatch.objects.exists()
-            else None
+        # 最近批次：与批次列表同一排序口径（-startedAt, -id），
+        # 模板按东八区渲染，可与列表第一行直接对账
+        "latest_batch": (
+            WitherBatch.objects.select_related("trough", "trough__garden")
+            .order_by("-startedAt", "-id")
+            .first()
         ),
-        "latest_batch_at_utc": _dt.datetime.utcnow(),
+        "now_local": timezone.localtime(timezone.now()),
     }
     return render(request, "home.html", context)
 
@@ -165,7 +165,7 @@ class BatchListView(LoginRequiredMixin, ListView):
     context_object_name = "batches"
 
     def get_queryset(self):
-        # BUG: 排序用 startedAt 原值；模板再按 UTC 显示 → 与编辑页矛盾
+        # 按绝对时刻倒序；startedAt 入库即为正确 UTC 时刻，展示层统一转东八区
         return (
             WitherBatch.objects.select_related("trough", "trough__garden")
             .order_by("-startedAt", "-id")

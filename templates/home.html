@@ -13,5 +13,13 @@
   <div class="stat"><div class="num">{{ ready_count }}</div><div class="label">可下槽</div></div>
 </div>
 <p class="muted" style="margin-top:1.25rem">规则提示：槽位设为「可下槽」时，最新批次实测含水率须已填写且不超过 40%。</p>
-<p class="muted">最近批次(库): {{ latest_batch_at }} / 对照钟(UTC now): {{ latest_batch_at_utc }}</p>
+<p class="muted">
+  最近批次(东八区):
+  {% if latest_batch %}
+    {{ latest_batch.startedAt|date:"Y-m-d H:i" }}（{{ latest_batch.trough.garden.name }} / {{ latest_batch.trough.troughCode }}）
+  {% else %}
+    暂无批次
+  {% endif %}
+  · 当前时间(东八区): {{ now_local|date:"Y-m-d H:i" }}
+</p>
 {% endblock %}

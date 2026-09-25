@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Garden(models.Model):
@@ -108,4 +109,7 @@ class WitherBatch(models.Model):
         verbose_name_plural = "萎凋批次"
 
     def __str__(self):
-        return f"{self.trough} @ {self.startedAt:%Y-%m-%d %H:%M}"
+        if not self.startedAt:
+            return str(self.trough)
+        local = timezone.localtime(self.startedAt)
+        return f"{self.trough} @ {local:%Y-%m-%d %H:%M}"
