@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tz %}
 {% block title %}首页{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -13,5 +14,7 @@
   <div class="stat"><div class="num">{{ ready_count }}</div><div class="label">可下槽</div></div>
 </div>
 <p class="muted" style="margin-top:1.25rem">规则提示：槽位设为「可下槽」时，最新批次实测含水率须已填写且不超过 40%。</p>
-<p class="muted">最近批次(库): {{ latest_batch_at }} / 对照钟(UTC now): {{ latest_batch_at_utc }}</p>
+{% timezone "Asia/Shanghai" %}
+<p class="muted">最近批次(东八区): {{ latest_batch_at|date:"Y-m-d H:i"|default:"—" }} / 服务器当前(东八区): {{ server_now|date:"Y-m-d H:i" }}</p>
+{% endtimezone %}
 {% endblock %}

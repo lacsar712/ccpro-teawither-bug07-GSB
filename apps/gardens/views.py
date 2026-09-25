@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.utils import timezone
-import datetime as _dt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
@@ -24,6 +23,9 @@ def _wants_htmx(request):
 
 @login_required
 def home(request):
+    # 与批次列表同一排序键(-startedAt, -id)，保证首页“最近批次”
+    # 与列表第一行可对账；模板统一按东八区(Asia/Shanghai)渲染。
+    latest_batch = WitherBatch.objects.order_by("-startedAt", "-id").first()
     context = {
         "garden_count": Garden.objects.count(),
         "trough_count": Trough.objects.count(),
@@ -35,13 +37,8 @@ def home(request):
         "loading_count": Trough.objects.filter(
             status=Trough.STATUS_LOADING
         ).count(),
-        # BUG: 最近批次用 utcnow 窗口，与列表东八展示不一致
-        "latest_batch_at": (
-            WitherBatch.objects.order_by("-startedAt").first().startedAt
-            if WitherBatch.objects.exists()
-            else None
-        ),
-        "latest_batch_at_utc": _dt.datetime.utcnow(),
+        "latest_batch_at": latest_batch.startedAt if latest_batch else None,
+        "server_now": timezone.now(),
     }
     return render(request, "home.html", context)
 
@@ -165,7 +162,8 @@ class BatchListView(LoginRequiredMixin, ListView):
     context_object_name = "batches"
 
     def get_queryset(self):
-        # BUG: 排序用 startedAt 原值；模板再按 UTC 显示 → 与编辑页矛盾
+        # 按 startedAt 绝对时刻倒序；东八区为固定 +08:00 偏移，
+        # 与本地墙钟序一致，模板按 Asia/Shanghai 渲染即与编辑页同口径。
         return (
             WitherBatch.objects.select_related("trough", "trough__garden")
             .order_by("-startedAt", "-id")

@@ -66,13 +66,13 @@ class WitherBatchForm(forms.ModelForm):
             self.initial["startedAt"] = local.strftime("%Y-%m-%dT%H:%M")
 
     def clean_startedAt(self):
-        import datetime as dt
         from django.utils import timezone
 
         val = self.cleaned_data.get("startedAt")
         if val is None:
             return val
-        # BUG: 把本地输入当成 UTC 存，再编辑又 localtime → 偏几小时
+        # datetime-local 输入是东八区本地墙钟时间，按当前时区(Asia/Shanghai)
+        # 解释为 aware 后再入库（库中统一存 UTC 绝对时刻）。
         if timezone.is_naive(val):
-            val = timezone.make_aware(val, dt.timezone.utc)
+            val = timezone.make_aware(val, timezone.get_current_timezone())
         return val
